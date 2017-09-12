@@ -57,8 +57,7 @@ The CLP Packet format is described exactly in the [CLP ASN.1 spec].
   in the protocol data (see below).
 
 - A **CLP Connection** is a websocket connection over which CLP Packets are
-  sent. Websockets are used because they provide message framing and allow CLP
-to use HTTP requests for authentication.
+  sent. Websockets are used because they provide message framing and allow for easy integration with browser-based code.
 
 - **CLP Packets** are the messages described in this document. They are
   formally defined in the [CLP ASN.1 spec].
@@ -346,3 +345,47 @@ rejected this transfer, including protocols but not including requestId.
 
 - An `Error` is returned if the request was not successful. _TODO: create
   error codes that distinguish the different failure cases_.
+
+## CLP Connection Establishment
+
+This section describes how peers establish a CLP connection. For this purpose, the peer initiating the connection is called a **client** and the other peer a **server**.
+
+### WebSocket Handshake
+
+TODO: The WebSocket handshake could be used to negotiate the CLP version. See https://github.com/interledger/rfcs/issues/294
+
+### Authentication
+
+Once the WebSocket connection has been established, the client is expected to send an authentication token within 30 seconds. The client MUST send this token before sending any other CLP packets. The token is sent using the sub-protocol `auth` wrapped in a `Message`. An example in ASN.1 notation is:
+
+```asn1
+auth-request protocolData ::= {
+  protocolName "auth",
+  contentType 0,
+  data `73757065722073656375726520746F6B656E'H -- hex representation of the token
+}
+```
+
+If the server receives any other CLP packets before the token, or the provided token is wrong, the server MUST reply with an `Error` and MUST close the connection. The error SHOULD contain the sub-protocol `auth` and an error message stating `Invalid Token`. An example in ASN.1 notation is:
+
+```asn1
+auth-wrong-token protocolData ::= {
+  protocolName "auth",
+  contentType 1,
+  data `496E76616C696420546F6B656E'H -- hex representation of the string Invalid Token
+}
+```
+
+The server MUST close the connection if the client does not send a token within 30 seconds after opening the connection. Before closing the connection, the server MAY send a `Message` informing the client that the authentication timed out. Such a message might be useful for debug purposes, but is not strictly necessary. An example in ASN.1 notation is:
+
+```asn1
+auth-timeout protocolData ::= {
+  protocolName "debug",
+  contentType 1,
+
+  -- hex representation of the string Authentication Timeout
+  data `41757468656E7469636174696F6E2054696D656F7574'H
+}
+```
+
+The server MUST reply with an empty `Response` if the provided token is valid. From this point onwards, the connection is considered to be authenticated and normal CLP operation can proceed.
