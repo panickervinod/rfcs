@@ -57,8 +57,7 @@ The CLP packet format is described exactly in the [CLP ASN.1 spec].
   in the protocol data (see below).
 
 - A **CLP Connection** is a websocket connection over which CLP packets are
-  sent. Websockets are used because they provide message framing and allow CLP
-to use HTTP requests for authentication.
+  sent. Websockets are used because they provide message framing and allow for easy integration with browser-based code.
 
 - **CLP Packets** are the protocol data units described in this document. They are
   formally defined in the [CLP ASN.1 spec].
