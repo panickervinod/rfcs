@@ -350,9 +350,15 @@ rejected this transfer, including protocols but not including requestId.
 
 This section describes how peers establish a CLP connection. For this purpose, the peer initiating the connection is called a **client** and the other peer a **server**.
 
-### WebSocket Handshake
+### Protocol Version Negotiation
 
-TODO: The WebSocket handshake could be used to negotiate the CLP version. See https://github.com/interledger/rfcs/issues/294
+When establishing a CLP Connection, client and server negotiate the protocol version. The protocol version negotiating is done as part of the WebSocket handshake and uses the [subprotocol mechanism](https://tools.ietf.org/html/rfc6455#section-1.9) of the WebSocket protocol. The detailed flow is as follows:
+
+1. As part of the [HTTP upgrade request](https://tools.ietf.org/html/rfc6455#section-1.3), the client sets the header `Sec-WebSocket-Protocol` to a comma-separated list of CLP versions that he supports.
+
+2. The server selects one of the versions indicated by the client and sets in its response the header `Sec-WebSocket-Protocol` to the selected value. If the server does not support any of the indicated CLP versions, the server sends `Sec-WebSocket-Protocol` without any value assigned.
+
+From this point onwards, client and server use the CLP version indicated in the server's response. If the server replies with an empty `Sec-WebSocket-Protocol` header, the client and server don't support a common CLP version. In this case, the connection establishment failed.
 
 ### Authentication
 
